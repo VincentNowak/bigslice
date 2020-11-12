@@ -8,7 +8,7 @@
 
 import argparse
 from argparse import RawTextHelpFormatter
-from os import getpid, path, makedirs, remove
+from os import getpid, path, makedirs, remove, sched_getaffinity
 from sys import argv
 from tempfile import TemporaryDirectory
 import glob
@@ -57,7 +57,7 @@ def fetch_pool(num_threads: int):
         # set cores for the multiprocessing pools
         all_cpu_ids = set()
         for i, p in enumerate(pool._pool):
-            cpu_id = str(list(os.sched_getaffinity(0))[i])
+            cpu_id = str(list(sched_getaffinity(0))[i])
             subprocess.run(["taskset",
                             "-p", "-c",
                             cpu_id,
@@ -73,7 +73,7 @@ def fetch_pool(num_threads: int):
     except FileNotFoundError:
         pass  # running in OSX?
     except IndexError:
-        print("Failed to assign all threads, requested %d threads, but only %d CPUs were available to use\n"%(num_threads, len(os.sched_getaffinity(0))))
+        print("Failed to assign all threads, requested %d threads, but only %d CPUs were available to use\n"%(num_threads, len(sched_getaffinity(0))))
     return pool
 
 
@@ -818,7 +818,7 @@ def main():
         ))
     arg_group_perf.add_argument(
         "-t", "--num_threads",
-        default=len(os.sched_getaffinity(0)), type=int, metavar="<N>",
+        default=len(sched_getaffinity(0)), type=int, metavar="<N>",
         help=("The number of parallel jobs to run (default: %(default)s)."))
     arg_group_perf.add_argument(
         "--hmmscan_chunk_size",
